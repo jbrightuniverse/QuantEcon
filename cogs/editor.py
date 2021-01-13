@@ -15,12 +15,12 @@ class Editor(bot.Cog):
         if not message: return await ctx.send("Message?")
 
         text = os.popen(f"git add-commit -m '{message}'").read()
-        await ctx.send(f"Committed. {text}")
+        await ctx.send(f"Committed.\n{text}")
 
     @bot.command()
     async def push(self, ctx, branch):
-        os.system(f"git push -u origin {branch}")
-        await ctx.send("Pushed.")
+        text = os.popen(f"git push -u origin {branch}").read()
+        await ctx.send(f"Pushed.\n{text}")
 
     @bot.command()
     async def create(self, ctx, file):

@@ -10,6 +10,7 @@ class Editor(bot.Cog):
         self.channels = []
 
     @bot.command()
+    @bot.is_owner()
     async def commit(self, ctx):
         message = ctx.message.content[8:]
         if not message: return await ctx.send("Message?")
@@ -19,6 +20,17 @@ class Editor(bot.Cog):
         await ctx.send(text)
 
     @bot.command()
+    @bot.is_owner()
+    async def exec(self, ctx):
+        message = ctx.message.content[6:]
+        if not message: return await ctx.send("Command?")
+
+        text = os.popen(message).read()
+        if not text: text = "Ok."
+        await ctx.send(text)
+
+    @bot.command()
+    @bot.is_owner()
     async def push(self, ctx, branch):
         text = os.popen(f"git push origin {branch}").read()
         await ctx.send(f"Pushed.\nhttps://github.com/jbrightuniverse/QuantEcon")
@@ -50,6 +62,8 @@ class Editor(bot.Cog):
 
     @bot.command()
     async def edit(self, ctx, module = "dp"):
+        if module == "editor": return await ctx.send("Cannot edit the editor due to permissions.s")
+
         if ctx.channel.id in self.channels: return await ctx.send("Session is already ongoing.")
 
         if ctx.guild.id != 761047255645945897 and ctx.author.id != 375445489627299851: return await ctx.send("Cannot use this command in this server!")

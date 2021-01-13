@@ -32,8 +32,13 @@ async def on_ready():
 
 @bot.command(name="reboot")
 async def rl(ctx, ext):
-  bot.reload_extension(f"cogs.{ext}")
-  await ctx.send(f"reloaded {ext} extension")
+  try:
+    bot.reload_extension(f"cogs.{ext}")
+    await ctx.send(f"reloaded {ext} extension")
+  except:
+    bot.load_extension(f"cogs.{ext}")
+    await ctx.send(f"loaded {ext} extension")
+  
 
 @bot.event
 async def on_command_error(ctx, error):

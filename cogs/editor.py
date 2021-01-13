@@ -14,8 +14,8 @@ class Editor(bot.Cog):
         message = ctx.message.content[8:]
         if not message: return await ctx.send("Message?")
 
-        os.system(f"git add-commit -m '{message}'")
-        await ctx.send("Committed.")
+        text = os.popen(f"git add-commit -m '{message}'").read()
+        await ctx.send(f"Committed. {text}")
 
     @bot.command()
     async def push(self, ctx, branch):
@@ -26,7 +26,7 @@ class Editor(bot.Cog):
     async def create(self, ctx, file):
         if file + ".py" in os.listdir("cogs"):
             return await ctx.send("Module already exists.")
-            
+
         open("cogs/" + file + ".py", "a").close()
         await ctx.send(f"Created {file} module.")
 

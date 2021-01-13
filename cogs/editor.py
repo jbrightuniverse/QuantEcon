@@ -2,6 +2,7 @@ import discord
 from discord.ext import commands as bot
 
 import os
+from subprocess import Popen, PIPE, STDOUT
 
 class Editor(bot.Cog):
 
@@ -15,14 +16,13 @@ class Editor(bot.Cog):
         if not message: return await ctx.send("Message?")
 
         text = os.popen(f"git add-commit -m '{message}'").read()
-        await ctx.send(f"Committed.\n{text}")
+        await ctx.send(f"Attempted to commit.\n{text}")
 
     @bot.command()
     async def push(self, ctx, branch):
-        await ctx.send(f"git push origin {branch}")
-        text = os.popen(f"git push origin {branch}").read()
-        await ctx.send(text)
-        await ctx.send(f"Pushed.\n{text}")
+        p = Popen(['git', 'push', 'origin', branch], stdout=PIPE, stdin=PIPE, stderr=PIPE)
+        out = p.communicate(input=os.getenv("PASS"))[0]
+        await ctx.send(f"Attempted to push.\n{out}")
 
     @bot.command()
     async def create(self, ctx, file):

@@ -15,12 +15,14 @@ class Editor(bot.Cog):
         if not message: return await ctx.send("Message?")
 
         text = os.popen(f"git add-commit -m '{message}'").read()
-        await ctx.send(f"Committed.\n{text}")
+        if not text: text = "Failed."
+        await ctx.send(text)
 
     @bot.command()
     async def push(self, ctx, branch):
         text = os.popen(f"git push origin {branch}").read()
-        await ctx.send(f"Pushed.\n{text}")
+        if not text: text = "Failed."
+        await ctx.send(f"{text}\nhttps://github.com/jbrightuniverse/QuantEcon")
 
     @bot.command()
     async def create(self, ctx, file):

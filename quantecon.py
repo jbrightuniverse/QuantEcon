@@ -11,7 +11,7 @@ import json
 import asyncio
 
 from collections import defaultdict
-from dotenv import load_dotenv()
+from dotenv import load_dotenv
 
 load_dotenv()
 

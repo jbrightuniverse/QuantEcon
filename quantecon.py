@@ -31,7 +31,6 @@ async def on_ready():
 
 
 @bot.command(name="reboot")
-@commands.is_owner()
 async def rl(ctx, ext):
   bot.reload_extension(f"cogs.{ext}")
   await ctx.send(f"reloaded {ext} extension")

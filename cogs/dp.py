@@ -8,7 +8,7 @@ class DP(bot.Cog):
 
   @bot.command()
   async def hello(self, ctx):
-    await ctx.send("hello")
+    await ctx.send("hi")
 
 
 

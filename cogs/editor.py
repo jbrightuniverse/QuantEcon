@@ -9,12 +9,36 @@ class Editor(bot.Cog):
         self.bot = bot
         self.channels = []
 
-    
+    @bot.command()
+    async def commit(self, ctx):
+        message = ctx.message.content[8:]
+        if not message: return await ctx.send("Message?")
+
+        os.system(f"git add-commit -m '{message}'")
+        await ctx.send("Committed.")
+
+    @bot.command()
+    async def push(self, ctx, branch):
+        os.system(f"git push -u origin {branch}")
+        await ctx.send("Pushed.")
+
+    @bot.command()
+    async def create(self, ctx, file):
+        if file + ".py" in os.listdir("cogs"):
+            return await ctx.send("Module already exists.")
+            
+        open("cogs/" + file + ".py", "a").close()
+        await ctx.send(f"Created {file} module.")
+
     @bot.command()
     async def help(self, ctx):
         text = "QuantEcon is a bot designed for running various experiments and algorithms related to economics.\n\n"
         text += "Automatic help system coming soon.\n\n"
         text += "**API for Discord Python IDE**:\n\n"
+        text += "`-reboot <module>`:\nreboots the module named `<module>`\n\n"
+        text += "`-create <file>`:\ncreates a module named `<file`\n\n"
+        text += "`-commit <message>`:\ncommit to origin with `<message>` commit message\n\n"
+        text += "`-push <branch>`:\npush to <branch> branch\n\n"
         text += "`-edit`:\nlaunch the editor. Default file is \"dp.py\" for now. \n\nThe following commands require `-edit` to have already been called:\n"
         text += "`edit <number>`:\nset the cursor to line `<number>`.\n\n"
         text += "`add <number>\n<text>`:\nadd `<text>` with `<number>` indents to the current cursor pos.\n\n"

@@ -19,7 +19,8 @@ class Editor(bot.Cog):
 
     @bot.command()
     async def push(self, ctx, branch):
-        text = os.popen(f"git push -u origin {branch}").read()
+        text = os.popen(f"git push origin {branch}").read()
+        await ctx.send(text)
         await ctx.send(f"Pushed.\n{text}")
 
     @bot.command()

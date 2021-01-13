@@ -21,8 +21,7 @@ class Editor(bot.Cog):
     @bot.command()
     async def push(self, ctx, branch):
         text = os.popen(f"git push origin {branch}").read()
-        if not text: text = "Failed."
-        await ctx.send(f"{text}\nhttps://github.com/jbrightuniverse/QuantEcon")
+        await ctx.send(f"Pushed.\nhttps://github.com/jbrightuniverse/QuantEcon")
 
     @bot.command()
     async def create(self, ctx, file):

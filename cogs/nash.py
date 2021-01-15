@@ -49,69 +49,78 @@ class Nash(bot.Cog):
       a = time.time()
       results = qe.game_theory.pure_nash.pure_nash_brute(game)
       b = time.time()
-      await ctx.send(game.payoff_arrays)
-      await ctx.send(game.payoff_profile_array)
       func = "original QuantEcon pure_nash_brute"
 
     elif mode == "eliminate":
       a = time.time()
-      results = await eliminate_dominated(ctx, game)
+      results = eliminate_dominated(game)
       b = time.time()
-      await ctx.send(results)
       func = "dominated strategy elimination"
-    
+
+    elif mode == "compare":
+      a = time.time()
+      results = qe.game_theory.pure_nash.pure_nash_brute(game)
+      b = time.time()
+      results2 = eliminate_dominated(game)
+      c = time.time()
+      return await ctx.send(gameformat(game.payoff_profile_array, results) + "\n" + gameformat(game.payoff_profile_array, results2) + f"\nUsing `original QuantEcon pure_nash_brute` function ({round(b-a, 6)} s)\nvs `dominated strategy elimination` function ({round(c-b, 6)} s).")
+
     else:
       return await ctx.send("Please specify a valid solver mode.")
     
     await ctx.send(gameformat(game.payoff_profile_array, results) + f"\nUsing `{func}` function. Executed in {round(b-a, 6)} seconds.")
 
 
-async def eliminate_dominated(ctx, game):
+def eliminate_dominated(game):
   remaining = dominated_strategy_iterate(list(game.payoff_arrays), np.ones((2, 2)), 0, True, 0)
-  await ctx.send(remaining)
   if np.all(remaining): return []
 
-  return tuple(map(tuple, np.where(remaining)))
+  return [tuple(a) for a in np.argwhere(remaining)]
 
 def dominated_strategy_iterate(payoffs, remaining, successful_iter, player, rounds_done):
   """
   simple recursive iterator for a 2x2 matrix game's pure Nash equilibria
   """
-
   if successful_iter == 2: 
     return remaining
 
-  if np.all(payoffs[player][0] > payoffs[player][1]):
-    # zero is better
-    payoffs[player] = np.delete(payoffs[player], 1, 0)
-    if player:
-      remaining[:, 1] = 0
+  try:
+    if np.all(payoffs[player][0] >= payoffs[player][1]):
+      # zero is better
+      payoffs[player] = np.delete(payoffs[player], 1, 0)
+      payoffs[1 - player] = np.delete(payoffs[1 - player], 1, 1)
+      if player:
+        remaining[:, 1] = 0
+      else:
+        remaining[1, :] = 0
+      successful_iter += 1
+      rounds_done += 1
+
+      return dominated_strategy_iterate(payoffs, remaining, successful_iter, 1 - player, rounds_done)
+
+    elif np.all(payoffs[player][0] <= payoffs[player][1]):
+      # one is better
+      payoffs[player] = np.delete(payoffs[player], 0, 0)
+      payoffs[1 - player] = np.delete(payoffs[1 - player], 0, 1)
+      if player:
+        remaining[:, 0] = 0
+      else:
+        remaining[0, :] = 0
+      successful_iter += 1
+      rounds_done += 1
+      return dominated_strategy_iterate(payoffs, remaining, successful_iter, 1 - player, rounds_done)
+      
+
     else:
-      remaining[1, :] = 0
-    successful_iter += 1
-    rounds_done += 1
+      # neither is better, try flipping
+      rounds_done += 1
+      if rounds_done == 3:
+        return remaining # return whatever shows up
 
-    return dominated_strategy_iterate(payoffs, remaining, successful_iter, 1 - player, rounds_done)
+      return dominated_strategy_iterate(payoffs, remaining, successful_iter, 1 - player, rounds_done)
 
-  elif np.all(payoffs[player][0] < payoffs[player][1]):
-    # one is better
-    payoffs[player] = np.delete(payoffs[player], 0, 0)
-    if player:
-      remaining[:, 0] = 0
-    else:
-      remaining[0, :] = 0
-    successful_iter += 1
-    rounds_done += 1
-    return dominated_strategy_iterate(payoffs, remaining, successful_iter, 1 - player, rounds_done)
-    
-
-  else:
-    # neither is better, try flipping
-    rounds_done += 1
-    if rounds_done == 2:
-      return remaining # return whatever shows up
-
-    return dominated_strategy_iterate(payoffs, remaining, successful_iter, 1 - player, rounds_done)
+  except:
+    return remaining
 
 
 def gameformat(game, results = []):

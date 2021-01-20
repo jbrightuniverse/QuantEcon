@@ -4,14 +4,68 @@ from discord.ext import commands as bot
 import os
 
 class Editor(bot.Cog):
+    """:pencil:  File Editor"""
+
+    text = "**API for Discord Python IDE**:\n\n"
+    text += "`-reboot <module>`:\nreboots the module named `<module>`\n\n"
+    text += "`-create <file>`:\ncreates a module named `<file`\n\n"
+    text += "`-commit <message>`:\ncommit to origin with `<message>` commit message\n\n"
+    text += "`-push <branch>`:\npush to <branch> branch\n\n"
+    text += "`-edit`:\nlaunch the editor. Default file is \"dp.py\" for now. \n\nThe following commands require `-edit` to have already been called:\n"
+    text += "`edit <number>`:\nset the cursor to line `<number>`.\n\n"
+    text += "`add <number>\n<text>`:\nadd `<text>` with `<number>` indents to the current cursor pos.\n\n"
+    text += "`tab <number>`:\nset indentation level of the current line to `<number>` indents.\n\n"
+    text += "`delete <start> <end>`:\ndelete inclusively all lines from `<start>` to `<end>`\n\n"
+    text += "`view`:\nview current code at cursor pos.\n"
 
     def __init__(self, bot):
         self.bot = bot
         self.channels = []
 
+    @bot.command(name="reboot")
+    async def rl(self, ctx, ext):
+        """
+        Module rebooter. Use this to reboot or load modules.
+
+        **Usage:**
+        `-reboot <module>`
+
+        **Examples:**
+        `-reboot editor` reboots the `editor` module
+        """
+
+        try:
+            self.bot.reload_extension(f"cogs.{ext}")
+            await ctx.send(f"reloaded {ext} extension")
+        except:
+            self.bot.load_extension(f"cogs.{ext}")
+            await ctx.send(f"loaded {ext} extension")
+
+    @bot.command()
+    @bot.is_owner()
+    async def shutdown(self, ctx):
+        """
+        Shuts the bot down. Only usable by registered owners.
+
+        **Usage:**
+        `-shutdown`
+        """
+
+        await self.bot.logout()
+
     @bot.command()
     @bot.is_owner()
     async def commit(self, ctx):
+        """
+        Sends a commit of the bot source to GitHub. Only usable by registered owners.
+
+        **Usage:**
+        `-commit <message>`
+
+        **Examples:**
+        `-commit implemented commit` Commits `implemented commit` to GitHub.
+        """
+
         message = ctx.message.content[8:]
         if not message: return await ctx.send("Message?")
 
@@ -22,6 +76,16 @@ class Editor(bot.Cog):
     @bot.command()
     @bot.is_owner()
     async def exec(self, ctx):
+        """
+        Executes a UNIX/Linux terminal instruction. Only usable by registered owners.
+
+        **Usage:**
+        `-exec <message>`
+
+        **Examples:**
+        `-exec pip install numpy` Installs `numpy`
+        """
+
         message = ctx.message.content[6:]
         if not message: return await ctx.send("Command?")
 
@@ -32,35 +96,39 @@ class Editor(bot.Cog):
     @bot.command()
     @bot.is_owner()
     async def push(self, ctx, branch):
+        """
+        Pushes the source of the bot source to GitHub. Only usable by registered owners.
+
+        **Usage:**
+        `-commit <branch>`
+
+        **Examples:**
+        `-commit master` Commits to `master` branch
+        """
+
         text = os.popen(f"git push origin {branch}").read()
         await ctx.send(f"Pushed.\nhttps://github.com/jbrightuniverse/QuantEcon")
 
     @bot.command()
     async def create(self, ctx, file):
+        """
+        Creates a new module for the bot.
+        This only generates a blank file; it does not load or populate it.
+
+        **Usage:**
+        `-create <filename>`
+
+        **Examples:**
+        `-create math` Creates a module named `math`.
+        """
+
         if file + ".py" in os.listdir("cogs"):
             return await ctx.send("Module already exists.")
 
         open("cogs/" + file + ".py", "a").close()
         await ctx.send(f"Created {file} module.")
 
-    @bot.command()
-    async def help(self, ctx):
-        text = "QuantEcon is a bot designed for running various experiments and algorithms related to economics.\n\n"
-        text += "Automatic help system coming soon.\n\n"
-        text += "**API for Discord Python IDE**:\n\n"
-        text += "`-reboot <module>`:\nreboots the module named `<module>`\n\n"
-        text += "`-create <file>`:\ncreates a module named `<file`\n\n"
-        text += "`-commit <message>`:\ncommit to origin with `<message>` commit message\n\n"
-        text += "`-push <branch>`:\npush to <branch> branch\n\n"
-        text += "`-edit`:\nlaunch the editor. Default file is \"dp.py\" for now. \n\nThe following commands require `-edit` to have already been called:\n"
-        text += "`edit <number>`:\nset the cursor to line `<number>`.\n\n"
-        text += "`add <number>\n<text>`:\nadd `<text>` with `<number>` indents to the current cursor pos.\n\n"
-        text += "`tab <number>`:\nset indentation level of the current line to `<number>` indents.\n\n"
-        text += "`delete <start> <end>`:\ndelete inclusively all lines from `<start>` to `<end>`\n\n"
-        text += "`view`:\nview current code at cursor pos.\n"
-        await ctx.send(text)
-
-    @bot.command()
+    @bot.command(help = text)
     async def edit(self, ctx, module = "dp"):
         if module == "editor": return await ctx.send("Cannot edit the editor due to permissions.s")
 

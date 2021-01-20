@@ -5,7 +5,10 @@ import numpy as np
 import quantecon as qe
 import time
 
+from util import *
+
 class Nash(bot.Cog):
+  """:game_die: Strategic Games/Nash Equilibria"""
 
   def __init__(self, bot):
     self.bot = bot
@@ -13,6 +16,17 @@ class Nash(bot.Cog):
 
   @bot.command()
   async def trust(self, ctx):
+    """
+    Plays a round of the Game of Trust with a selected opponent. 
+    Details accessible when playing the game.
+
+    **Usage:**
+    `-trust <player>`
+
+    **Examples:**
+    `trust <@375445489627299851>` plays the Game of Trust with <@375445489627299851>
+    """
+
     mentions = ctx.message.mentions
     users = {ctx.author.id: 
       {
@@ -128,12 +142,21 @@ class Nash(bot.Cog):
         return 
           
 
-
-
-
-
   @bot.command()
   async def randmatx(self, ctx):
+    """
+    Displays a random matrix game with no formatting.
+
+    **Usage:**
+    `-randmatx <num_actions_1> [num_actions_2] [num_actions_3] [...] cov [covariance]`
+    Default covariance is zero.
+
+    **Examples:**
+    `-randmatx 2 2 2` Gives a random matrix game with 3 players, each with 2 strategies
+    `-randmatx 1 2`   Gives a game with 2 players, one with 1 strategy and one with 2
+    `-randmatx 2 2 cov 0.5` Game with 2 players, each with 2 strategies, with RNG covariance = 0.5
+    """
+
     actions = ctx.message.content[10:]
 
     if not actions or not all(a.lstrip().rstrip().isdigit() for a in actions.split(",")):
@@ -152,6 +175,13 @@ class Nash(bot.Cog):
 
   @bot.command()
   async def randgame(self, ctx):
+    """
+    Displays a random formatted 2x2 matrix game.
+
+    **Usage:**
+    `-randgame`
+    """
+
     game = qe.game_theory.random.covariance_game((2, 2), 0).payoff_profile_array * 10
     game = game.astype(np.int8)
     await ctx.send(gameformat(game))
@@ -159,6 +189,19 @@ class Nash(bot.Cog):
 
   @bot.command()
   async def randsolve(self, ctx, mode = "brute"):
+    """
+    Solves a random 2x2 matrix game.
+
+    **Usage:**
+    `-randsolve [mode]`
+
+    **Examples:**
+    `-randsolve` Solves a random 2x2 game with the default brute force method
+    `-randsolve brute` Same as `-randsolve`
+    `-randsolve eliminate` Solves a game with iterated elimination of dominated strategies
+    `-randsolve compare` Uses both of the above methods to solve a random game
+    """
+
     profile = qe.game_theory.random.covariance_game((2, 2), 0).payoff_profile_array * 10
     game = qe.game_theory.normal_form_game.NormalFormGame(profile.astype(np.int8), dtype = np.int8)
 
@@ -245,39 +288,6 @@ def dominated_strategy_iterate(payoffs, remaining, successful_iter, player, roun
 
   except:
     return remaining
-
-
-def gameformat(game, results = [], nash = True):
-  toprow = game[0]
-  bottomrow = game[1]
-  ul = toprow[0]
-  ur = toprow[1]
-  bl = bottomrow[0]
-  br = bottomrow[1]
-  include = []
-  for result in results:
-    include.append(result)
-
-  text = ["> ```"]
-  text.append(">               You")
-  text.append(">           C         D")
-  text.append(">      ╔═════════╦═════════╗")
-  text.append(">    C ║" + [" ", "*"][(0, 0) in include] + str(ul[0]).rjust(3)+","+str(ul[1]).ljust(4) + "│" + str(ur[0]).rjust(4)+","+str(ur[1]).ljust(3) + [" ", "*"][(0, 1) in include] + "║")
-  text.append("> Me   ╠─────────┼─────────╣")
-  text.append(">    D ║" + [" ", "*"][(1, 0) in include] + str(bl[0]).rjust(3)+","+str(bl[1]).ljust(4) + "│" + str(br[0]).rjust(4)+","+str(br[1]).ljust(3) + [" ", "*"][(1, 1) in include] + "║")
-  t = f">      ╚═════════╩═════════╝```"
-  if nash: t += f"Pure Nash Equilibria: {','.join([str(game[result]) for result in results])}"
-  text.append(t)
-  return "\n".join(text)
-
-
-async def get(bot, users):
-  try:
-    message = await bot.wait_for("message", timeout = 30, check = lambda m: m.author.id in users)
-  except:
-    return "timed out"
-
-  return message
 
 
 def setup(bot):

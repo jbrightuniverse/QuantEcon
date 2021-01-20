@@ -45,7 +45,7 @@ async def help(ctx, *args):
   if not args:
     fields = list(zip([bot.get_cog(name).description for name in cogdict], [", ".join(cogdict[name]) for name in cogdict]))
     fields.sort(key = lambda x: x[0].split()[1])
-    fields.append(["Created by <@375445489627299851> and based on https://quanteconpy.readthedocs.io/en/latest/.\n\nThis bot is available on GitHub: https://github.com/jbrightuniverse/QuantEcon", f"v0.0.2"])
+    fields.append(["Created by James Yu and based on https://quanteconpy.readthedocs.io/en/latest/.\n\nThis bot is available on GitHub: https://github.com/jbrightuniverse/QuantEcon", f"v0.0.2"])
     return await util.mbed(ctx, "QuantEcon", "I'm a bot designed for running various experiments and algorithms related to economics.\n\nType **-help <command>** (e.g. `-help solve`) for more details.", fields = fields, thumbnail = bot.user.avatar_url)
   if args[0] not in cmdlist or not bot.get_command(args[0]).help:
     return await util.mbed(ctx, f"-{args[0]}", "Sorry, that command doesn't exist.", thumbnail = bot.user.avatar_url)

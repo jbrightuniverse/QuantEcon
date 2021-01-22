@@ -3,6 +3,10 @@ from discord.ext import commands as bot
 
 import numpy as np
 import quantecon as qe
+from sympy.solvers import solve
+from sympy import symbols, latex, lambdify, sympify, binomial, diff, simplify, re
+
+from cogs.anarchy import tex
 
 class Symbolic(bot.Cog):
   """:1234: Symbolic Math"""

@@ -177,7 +177,7 @@ class Anarchy2(bot.Cog):
             res = optimize.minimize(f, [1/routers for i in range(routers)], constraints=[LinearConstraint([np.ones(routers)], [1], [1])], bounds = Bounds(np.zeros(routers), np.inf * np.ones(routers)))
             expected_packets = simplify(total_payoff.subs(list(zip(pis, res.x)) + list(zip(betas, newprobabilities))))
 
-          col = colorsys.hls_to_rgb(expected_packets/2, 0.5, 1)
+          col = colorsys.hls_to_rgb(expected_packets/routers, 0.5, 1)
           col = [int(round(255*col[0])), int(round(255*col[1])), int(round(255*col[2])), 255]
           r, g, b, _ = base.getpixel((mid[0], mid[1])) 
           if (r, g, b) != (255, 255, 255):

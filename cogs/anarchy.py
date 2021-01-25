@@ -19,6 +19,9 @@ from sympy import symbols, latex, lambdify, sympify, binomial, diff, simplify, r
 from sympy.matrices import Matrix
 import sympy
 
+import scipy.optimize as optimize
+from scipy.optimize import LinearConstraint, Bounds
+
 from util import *
 
 import warnings
@@ -33,20 +36,58 @@ class Anarchy(bot.Cog):
 
   @bot.command()
   async def routergraph(self, ctx):
-    betas = [float(a) for a in ctx.message.content[13:].split()] + [symbols("beta")]
+    """
+    Graphs expected packet functions for the Price of Anarchy with 2 players and m routers.
+
+    **Usage:**
+    `-routeroptimal [beta1] [beta2] [beta3] [...]`
+
+    **Examples:**
+    `-routeroptimal 0.5 0.5 0.5` Gives function for a 4 router setup with 3 β = 0.5 routers and one variable router
+    """
+
+    basebetas = [float(a) for a in ctx.message.content[13:].split()]
+    betas = basebetas + [symbols("beta")]
     routers = len(betas)
-    sets = list(itertools.combinations(betas, routers - 1))
-    denom = sum(np.prod(i) for i in sets.copy())
-    numer = sum(sum(np.prod(i)*beta for beta in i) for i in sets.copy()) + (1 - (routers-2)*(routers-1)) * np.prod(betas)
-    equation = numer/denom
-    await tex(ctx, str(latex(equation)), "Optimal Result:")
-    equation = (2*routers - 1) * np.prod(betas) / (sum(np.prod(i) for i in itertools.combinations(betas, routers - 1)))
-    await tex(ctx, str(latex(equation)), "Nash Result:")
 
+    equation2 = (2*routers - 1) * np.prod(betas) / (sum(np.prod(i) for i in itertools.combinations(betas, routers - 1)))
+    plt.clf()
+    fig, ax = plt.subplots()
 
+    mapper = lambdify(betas[-1], equation2, modules=['numpy'])
+    xs = np.linspace(0, 1, 100)
+    ys = mapper(xs)
+    plt.plot(xs, ys, label="Nash Equilibrium")
+
+    def f(pis):
+      nonlocal newbetas, routers
+      return -1 * (sum(newbetas[i]*pis[i]**2 for i in range(routers)) + 2 * (sum(pis[r[0]]*pis[r[1]]*(newbetas[r[0]]+newbetas[r[1]]) for r in itertools.combinations(range(routers), 2))))
+    
+    newbetas = []
+    expected_packets = []
+    for beta in np.linspace(0, 1, 100):
+      newbetas = basebetas + [beta]
+      res = optimize.minimize(f, [1/routers for i in range(routers)], constraints=[LinearConstraint([np.ones(routers)], [1], [1])], bounds = Bounds(np.zeros(routers), np.inf * np.ones(routers)))
+      mpis = res.x
+      expected_packets.append(sum(newbetas[i]*mpis[i]**2 for i in range(routers)) + 2 * (sum(mpis[r[0]]*mpis[r[1]]*(newbetas[r[0]]+newbetas[r[1]]) for r in itertools.combinations(range(routers), 2))))
+
+    plt.plot(np.linspace(0, 1, 100), expected_packets, label="Socially Optimal")
+
+    fig.suptitle(f"2 Players and {len(betas)} routers: β in {[round(beta, 2) for beta in betas[:-1]]} + variable")
+    ax.legend()
+    plt.xlabel("β (variable router)")
+    plt.ylabel("Expected Packets")
+    ax.set_xlim(0,1)
+    ax.set_ylim(0,2)
+    filex = BytesIO()
+    fig.savefig(filex, format = "png")
+    filex.seek(0)
+    plt.close()
+    await ctx.send(file=discord.File(filex, "manyrouters.png"))
+
+  """
   @bot.command()
   async def routeroptimal(self, ctx, size):
-    """
     Computes the socially optimal expected packet functions for the Price of Anarchy with 2 players and m routers.
 
     **Usage:**
@@ -54,7 +95,6 @@ class Anarchy(bot.Cog):
 
     **Examples:**
     `-routeroptimal 2` Gives function for a 2 router setup
-    """
 
     routers = int(size)
     betas = symbols(" ".join([f'beta{i}' for i in range(1, routers + 1)]))
@@ -63,7 +103,7 @@ class Anarchy(bot.Cog):
     numer = sum(sum(np.prod(i)*beta for beta in i) for i in sets.copy()) + (1 - (routers-2)*(routers-1)) * np.prod(betas)
     equation = numer/denom
     await tex(ctx, str(latex(equation)), "Result:")
-
+  """
 
   @bot.command()
   async def routeroptimalpi(self, ctx, size):
@@ -71,35 +111,22 @@ class Anarchy(bot.Cog):
     Computes the socially optimal π probability values for the Price of Anarchy with 2 players and m routers.
 
     **Usage:**
-    `-routeroptimalpi <routers>`
+    `-routeroptimalpi [beta1] [beta2] [...]`
 
     **Examples:**
-    `-routeroptimalpi 2` Gives functions for a 2 router setup
+    `-routeroptimalpi 0.5 0.5` Gives functions for a 2 router setup
     """
 
-    routers = int(size)
-    if routers > 6:
-      return await ctx.send("Too big.")
+    betas = [float(a) for a in ctx.message.content[17:].split()]
+    routers = len(betas)
 
-    betas = symbols(" ".join([f'beta{i}' for i in range(1, routers + 1)]))
-
-    thelist = []
-    for i in range(routers - 1):
-      newlist = [-betas[i+1]] + [betas[0] - betas[i + 1] for j in range(routers - 1)]
-      newlist[i + 1] = betas[0]
-      thelist.append(newlist)
-
-    thelist.append([1 for i in range(routers)])
-
-    A = Matrix(thelist)
-    b = Matrix(routers, 1, np.append([0 for i in range(routers-1)], 1))
-    x = A.LUsolve(b)
-    pis = [simplify(x[i]) for i in range(routers)]
-    text = "["
-    text += ",".join([str(latex(simplify(x[i]))) for i in range(routers)])
-    text += "]"
-    await tex(ctx, text, "Results:")
-
+    def f(pis):
+      nonlocal betas, routers
+      return -1 * (sum(betas[i]*pis[i]**2 for i in range(routers)) + 2 * (sum(pis[r[0]]*pis[r[1]]*(betas[r[0]]+betas[r[1]]) for r in itertools.combinations(range(routers), 2))))
+    res = optimize.minimize(f, [1/routers for i in range(routers)], constraints=[LinearConstraint([np.ones(routers)], [1], [1])], bounds = Bounds(np.zeros(routers), np.inf * np.ones(routers)))
+    await ctx.send(res.x)
+    await ctx.send(sum(res.x))
+    
 
   @bot.command()
   async def multirouter(self, ctx, size):
